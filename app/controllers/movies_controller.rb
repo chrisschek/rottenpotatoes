@@ -7,7 +7,33 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.all
+    sort = params[:sort] || session[:sort]
+    case sort
+    when 'title'
+      ordering,@title_header = {:order => :title}, 'hilite'
+    when 'release_date'
+      ordering,@date_header = {:order => :release_date}, 'hilite'
+    end
+    @all_ratings = Movie.all_ratings
+    @selected_ratings = params[:ratings] || session[:ratings] || {}
+    
+    if @selected_ratings == {}
+      @selected_ratings = Hash[@all_ratings.map {|rating| [rating, rating]}]
+    end
+    
+    if params[:sort] != session[:sort]
+      session[:sort] = sort
+      flash.keep
+      redirect_to :sort => sort, :ratings => @selected_ratings and return
+    end
+
+    if params[:ratings] != session[:ratings] and @selected_ratings != {}
+      session[:sort] = sort
+      session[:ratings] = @selected_ratings
+      flash.keep
+      redirect_to :sort => sort, :ratings => @selected_ratings and return
+    end
+    @movies = Movie.find_all_by_rating(@selected_ratings.keys, ordering)
   end
 
   def new
@@ -38,4 +64,13 @@ class MoviesController < ApplicationController
     redirect_to movies_path
   end
 
+  def samedirector
+    @movie = Movie.find(params[:id])
+    @director = @movie.director
+    if @director == "" or @director == nil
+      flash[:notice] = "'#{@movie.title}' has no director info"
+      redirect_to movies_path
+    end
+    @dmovies = Movie.where("director = ?", @director)
+  end
 end

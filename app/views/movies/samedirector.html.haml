@@ -1,0 +1,8 @@
+-#  This file is app/views/movies/index.html.haml
+%h1 Movies Directed by: #{@director}
+
+%ul
+  - @dmovies.each do |movie|
+    %li #{movie.title}
+
+= link_to 'Back to movie list', movies_path
